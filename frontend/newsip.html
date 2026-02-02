@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SIP Bank | New SIP Plan</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- ✅ TOP BANK NAVBAR -->
+  <nav class="top-navbar">
+
+    <!-- Left Logo -->
+    <div class="bank-logo">
+      🏦 <span>SIP Bank</span>
+    </div>
+
+    <!-- Center Links -->
+    <div class="bank-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="newsip.html" class="active">New SIP</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+
+    <!-- Right Customer -->
+    <div class="bank-user">
+      👤 Welcome, <span id="customerName">Customer</span>
+    </div>
+
+  </nav>
+
+
+  <!-- ✅ MAIN FORM AREA -->
+  <div class="main-area">
+
+    <!-- ✅ FORM CARD -->
+    <div class="form-card">
+
+      <h2 class="form-title">➕ Create New SIP Plan</h2>
+      <p class="form-subtitle">
+        Start investing like a premium bank customer with SIP Bank
+      </p>
+
+      <!-- ✅ SIP FORM -->
+      <form onsubmit="createSIP(event)">
+
+        <div class="input-group">
+          <label>Monthly Investment Amount (₹)</label>
+          <input type="number" id="amount" placeholder="Example: 5000" required>
+        </div>
+
+        <div class="input-group">
+          <label>Investment Duration (Years)</label>
+          <input type="number" id="years" placeholder="Example: 5" required>
+        </div>
+
+        <div class="input-group">
+          <label>Expected Return Rate (%)</label>
+          <input type="number" id="rate" placeholder="Example: 12" required>
+        </div>
+
+        <!-- ✅ SUBMIT BUTTON -->
+        <button type="submit" class="auth-btn">
+          ✅ Save SIP Plan
+        </button>
+
+      </form>
+
+      <!-- ✅ RESULT MESSAGE -->
+      <p id="result" class="result-text"></p>
+
+    </div>
+
+  </div>
+
+
+  <!-- ✅ JavaScript -->
+  <script>
+    /* ✅ SHOW USERNAME IN NAVBAR */
+    document.getElementById("customerName").innerText =
+      localStorage.getItem("loggedUser") || "Customer";
+
+
+    /* ✅ LOGOUT FUNCTION */
+    function logout() {
+      localStorage.clear();
+      alert("✅ Logged Out Successfully!");
+      window.location.href = "login.html";
+    }
+
+
+    /* ✅ CREATE SIP FUNCTION */
+    function createSIP(event) {
+      event.preventDefault();
+
+      let userId = localStorage.getItem("loggedUserId");
+
+      if (!userId) {
+        alert("❌ Please login first!");
+        window.location.href = "login.html";
+        return;
+      }
+
+      let monthly_amount = parseInt(document.getElementById("amount").value);
+      let years = parseInt(document.getElementById("years").value);
+      let rate = parseFloat(document.getElementById("rate").value);
+
+      fetch("http://127.0.0.1:5000/sip-calculate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          user_id: userId,   // ✅ Dynamic User
+          monthly_amount: monthly_amount,
+          years: years,
+          rate: rate
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+
+        document.getElementById("result").innerHTML =
+          `✅ SIP Saved Successfully! <br>
+           💰 Maturity Amount: ₹${data.maturity_amount}`;
+
+        setTimeout(() => {
+          window.location.href = "dashboard.html";
+        }, 1800);
+
+      })
+      .catch(() => {
+        alert("❌ Server error. Start Flask backend.");
+      });
+    }
+  </script>
+
+</body>
+</html>

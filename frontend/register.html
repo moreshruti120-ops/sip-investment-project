@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SIP Bank Register</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="auth-body">
+
+  <div class="auth-card">
+
+    <h2 class="auth-title">🏦 SIP Bank Registration</h2>
+    <p class="auth-subtitle">Create Your Secure Customer Account</p>
+
+    <!-- ✅ FORM -->
+    <form id="registerForm">
+
+      <label>Full Name</label>
+      <input type="text" id="name" placeholder="Enter your full name" required>
+
+      <label>Email Address</label>
+      <input type="email" id="email" placeholder="Enter your email" required>
+
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Create a strong password" required>
+
+      <!-- ✅ BUTTON FIXED -->
+      <button type="submit" class="auth-btn">
+        ✅ Register
+      </button>
+
+    </form>
+
+    <p class="auth-footer">
+      Already have an account?
+      <a href="login.html">Login Here</a>
+    </p>
+
+  </div>
+
+  <!-- ✅ SCRIPT -->
+  <script>
+    document.getElementById("registerForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      let name = document.getElementById("name").value;
+      let email = document.getElementById("email").value;
+      let password = document.getElementById("password").value;
+
+      fetch("http://127.0.0.1:5000/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name, email, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.message) {
+          alert("✅ Registered Successfully!");
+          window.location.href = "login.html";
+        } else {
+          alert("❌ " + data.error);
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>

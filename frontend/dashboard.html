@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SIP Bank Dashboard</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- ✅ Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+  <!-- ✅ TOP NAVBAR -->
+  <nav class="top-navbar">
+
+    <div class="bank-logo">
+      🏦 <span>SIP Bank</span>
+    </div>
+
+    <div class="sidenav-links">
+      <a href="dashboard.html" class="active">Dashboard</a>
+      <a href="newsip.html">New SIP</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+
+    <div class="bank-user">
+      👤 Welcome, <span id="customerName">Customer</span>
+    </div>
+
+  </nav>
+
+  <!-- ✅ MAIN AREA -->
+  <div class="main-area">
+
+    <div class="dashboard-card">
+
+      <!-- ✅ CUSTOMER PROFILE -->
+      <div class="profile-box">
+
+        <h2>👤 Customer Profile</h2>
+
+        <div class="profile-details">
+          <p><b>Name:</b> <span id="profileName">Loading...</span></p>
+          <p><b>Email:</b> <span id="profileEmail">Loading...</span></p>
+          <p><b>Account No:</b> 4589-XXXX-2100</p>
+          <p><b>Available Balance:</b> ₹<span id="balance">Loading...</span></p>
+        </div>
+
+      </div>
+
+      <!-- ✅ LOAD BUTTON -->
+      <button class="btn-primary" onclick="loadPlans()">
+        ✅ Load SIP Plans
+      </button>
+
+      <!-- ✅ SUMMARY CARDS -->
+      <div class="summary-cards">
+
+        <div class="card blue">
+          <h3>Total Invested</h3>
+          <p id="invested">₹0</p>
+        </div>
+
+        <div class="card green">
+          <h3>Total Maturity</h3>
+          <p id="maturity">₹0</p>
+        </div>
+
+        <div class="card gold">
+          <h3>Total Profit</h3>
+          <p id="profit">₹0</p>
+        </div>
+
+      </div>
+
+      <!-- ✅ SIP TABLE -->
+      <h3>📌 SIP Plans Table</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Monthly Amount</th>
+            <th>Years</th>
+            <th>Rate (%)</th>
+            <th>Maturity Amount</th>
+          </tr>
+        </thead>
+
+        <tbody id="sipTable">
+          <tr>
+            <td colspan="4" style="text-align:center;">
+              Loading SIP Plans...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ✅ CHART -->
+      <h3>📈 Investment Growth Chart</h3>
+      <canvas id="sipChart" height="250"></canvas>
+
+    </div>
+
+  </div>
+
+  <!-- ✅ DASHBOARD SCRIPT -->
+  <script>
+
+    let chart;
+
+    // ✅ Get logged userId
+    let userId = localStorage.getItem("loggedUserId");
+
+    // ✅ Redirect if not logged in
+    if (!userId) {
+      alert("❌ Please login first!");
+      window.location.href = "login.html";
+    }
+
+    // ✅ Navbar username
+    document.getElementById("customerName").innerText =
+      localStorage.getItem("loggedUser");
+
+
+    // ✅ LOGOUT
+    function logout() {
+      localStorage.clear();
+      alert("✅ Logged out successfully!");
+      window.location.href = "login.html";
+    }
+
+
+    // ✅ SHOW EMPTY CHART IF NO SIP FOUND
+    function showEmptyChart() {
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(document.getElementById("sipChart"), {
+        type: "line",
+        data: {
+          labels: ["No Data"],
+          datasets: [{
+            label: "No SIP Plans Yet",
+            data: [0],
+            borderColor: "gray",
+            backgroundColor: "rgba(150,150,150,0.2)",
+            tension: 0.4,
+            fill: true
+          }]
+        }
+      });
+    }
+
+
+    // ✅ LOAD PROFILE
+    function loadProfile() {
+
+      fetch(`http://127.0.0.1:5000/profile/${userId}`)
+        .then(res => res.json())
+        .then(user => {
+
+          document.getElementById("profileName").innerText = user.name;
+          document.getElementById("profileEmail").innerText = user.email;
+
+          document.getElementById("balance").innerText =
+            Number(user.balance).toLocaleString("en-IN");
+
+        })
+        .catch(() => {
+          document.getElementById("balance").innerText = "Backend Error ❌";
+        });
+    }
+
+
+    // ✅ LOAD SIP PLANS
+    function loadPlans() {
+
+      fetch(`http://127.0.0.1:5000/my-sips/${userId}`)
+        .then(res => res.json())
+        .then(data => {
+
+          let plans = data.sip_plans;
+          let tableHTML = "";
+
+          let totalInvested = 0;
+          let totalMaturity = 0;
+
+          let labels = [];
+          let maturityData = [];
+
+          // ✅ NO SIP PLANS
+          if (plans.length === 0) {
+
+            document.getElementById("sipTable").innerHTML =
+              `<tr><td colspan="4" style="text-align:center;">
+                ❌ No SIP Plans Found
+              </td></tr>`;
+
+            showEmptyChart();
+            return;
+          }
+
+          // ✅ SIP EXISTS
+          plans.forEach(p => {
+
+            totalInvested += p.monthly_amount * p.years * 12;
+            totalMaturity += p.maturity_amount;
+
+            tableHTML += `
+              <tr>
+                <td>₹${p.monthly_amount}</td>
+                <td>${p.years}</td>
+                <td>${p.rate}%</td>
+                <td>₹${p.maturity_amount.toFixed(2)}</td>
+              </tr>
+            `;
+
+            labels.push(p.years + " Years");
+            maturityData.push(p.maturity_amount);
+          });
+
+          document.getElementById("sipTable").innerHTML = tableHTML;
+
+          let profit = totalMaturity - totalInvested;
+
+          // ✅ Update Cards
+          document.getElementById("invested").innerText =
+            "₹" + totalInvested.toLocaleString("en-IN");
+
+          document.getElementById("maturity").innerText =
+            "₹" + totalMaturity.toFixed(2);
+
+          document.getElementById("profit").innerText =
+            "₹" + profit.toFixed(2);
+
+
+          // ✅ Draw Chart
+          if (chart) chart.destroy();
+
+          chart = new Chart(document.getElementById("sipChart"), {
+            type: "line",
+            data: {
+              labels: labels,
+              datasets: [{
+                label: "SIP Growth",
+                data: maturityData,
+                borderColor: "#0f9d58",
+                backgroundColor: "rgba(15,157,88,0.2)",
+                tension: 0.4,
+                fill: true
+              }]
+            }
+          });
+
+        })
+        .catch(() => {
+          alert("❌ Backend not responding. Start Flask.");
+        });
+    }
+
+
+    // ✅ AUTO LOAD EVERYTHING ON START
+    loadProfile();
+    loadPlans();
+
+  </script>
+
+</body>
+</html>

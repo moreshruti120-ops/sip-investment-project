@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SIP Bank | Transactions</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- ✅ NAVBAR -->
+  <nav class="top-navbar">
+
+    <div class="bank-logo">
+      🏦 <span>SIP Bank</span>
+    </div>
+
+    <div class="bank-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="newsip.html">New SIP</a>
+      <a href="transactions.html" class="active">Transactions</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+
+    <div class="bank-user">
+      👤 Welcome, <span id="customerName"></span>
+    </div>
+  </nav>
+
+  <!-- ✅ MAIN -->
+  <div class="main-area">
+    <div class="dashboard-card">
+
+      <h2>📑 Transaction History</h2>
+      <p class="subtitle">Your recent SIP investments & account activity</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+
+        <tbody id="txnTable">
+          <tr>
+            <td colspan="4" style="text-align:center;">
+              Loading Transactions...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <!-- ✅ SCRIPT -->
+  <script>
+    let userId = localStorage.getItem("loggedUserId");
+
+    if (!userId) {
+      alert("❌ Please Login First!");
+      window.location.href = "login.html";
+    }
+
+    document.getElementById("customerName").innerText =
+      localStorage.getItem("loggedUser");
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+
+    function loadTransactions() {
+
+      fetch(`http://127.0.0.1:5000/transactions/${userId}`)
+        .then(res => res.json())
+        .then(data => {
+
+          let txns = data.transactions;
+          let html = "";
+
+          if (txns.length === 0) {
+            html = `<tr>
+                      <td colspan="4" style="text-align:center;">
+                        ❌ No Transactions Found
+                      </td>
+                    </tr>`;
+          }
+
+          txns.forEach(t => {
+            html += `
+              <tr>
+                <td>${t.created_at}</td>
+                <td>${t.type}</td>
+                <td>₹${t.amount}</td>
+                <td>${t.description}</td>
+              </tr>
+            `;
+          });
+
+          document.getElementById("txnTable").innerHTML = html;
+        });
+    }
+
+    loadTransactions();
+  </script>
+
+</body>
+</html>
